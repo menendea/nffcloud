@@ -119,6 +119,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "nffCloud"
+    }
+  },
+  "defaultProject": "nffCloud",
+  "cli": {
+    "analytics": "e6b1735a-3cab-4fac-ac21-dc2cbbc232c8"
+  }
 }
