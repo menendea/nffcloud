@@ -1,6 +1,8 @@
 {
   "name": "nff-cloud",
-  "version": "0.0.0",
+  "version": "0.0.2",
+  "description": "Netoffice dashboard for AWS Workspace",
+  "author": "Ariel Menendez",
   "main": "./electron/dist/main.js",
   "scripts": {
     "ng": "ng",
@@ -9,7 +11,8 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "electron": "ng build --base-href \"./\" && tsc -p electron && electron ."
+    "electron": "ng build --base-href \"./\" && tsc -p electron && electron .",
+    "publish": "electron-builder build --win -p always"
   },
   "private": true,
   "dependencies": {
@@ -52,6 +55,7 @@
   },
   "build": {
     "appId": "com.github.menendea.nffcloud",
+    "files": ["dist/nffCloud/*", "electron/dist/main.js"],
     "mac": {
       "category": "nffcloud.app.category.type",
       "target": [
