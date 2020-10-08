@@ -17,6 +17,25 @@
 </div>
 
 <footer>
+  <div class="row configBtn">
+    <div class="col-4">
+      <button (click)="closeSession()" type="button" class="float-left btn btn-outline-info shadow-sm">
+        <fa-icon [icon]="['fas', 'sign-out-alt']" size="1x"  class=""></fa-icon>
+        Finalizar Sesión 
+      </button>
+    </div>
+    <div class="col-1">
+      <button (click)="openNetofficeConfig()" type="button" class="float-left btn btn-outline-secondary shadow-sm">
+        <fa-icon [icon]="['fas', 'cog']" size="1x"  class=""></fa-icon>
+      </button>
+    </div>
+    <div class="col-1">
+      <button (click)="openTaskmanager()" type="button" class="float-left btn btn-outline-secondary shadow-sm">
+        <fa-icon [icon]="['fas', 'microchip']" size="1x"  class=""></fa-icon>
+      </button>
+    </div>
+  </div>  
+  
   <div class="float-right">
     <img src="https://images.netactica.com/nffcloud/nff-background.jpg" width="300px" alt="">
   </div>

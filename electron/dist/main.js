@@ -5,6 +5,7 @@ var electron_updater_1 = require("electron-updater");
 var electron_log_1 = require("electron-log");
 var path = require("path");
 var url = require("url");
+var child_process_1 = require("child_process");
 //const executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 var executablePath = "C:\\runNff\\run.vbs";
 var win;
@@ -24,6 +25,18 @@ electron_1.app.on('activate', function () {
     if (win === null) {
         createWindow();
     }
+});
+electron_1.ipcMain.on('closeSession', function (e) {
+    var command = child_process_1.exec;
+    command('shutdown -L', function (error, stdout, stderr) { });
+});
+electron_1.ipcMain.on('openTaskmanager', function (e) {
+    var command = child_process_1.exec;
+    command('taskmgr', function (error, stdout, stderr) { });
+});
+electron_1.ipcMain.on('openNetofficeConfig', function (e) {
+    var command = child_process_1.exec;
+    command('notepad c:\\netoffice\\netofficeloader.exe.config', function (error, stdout, stderr) { });
 });
 electron_1.ipcMain.on('openNetoffice', function (e) {
     // let child = exec;

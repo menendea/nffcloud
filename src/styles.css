@@ -25,3 +25,10 @@ footer {
     padding: 20px;
 }
 
+.configBtn {
+    position: fixed;
+    left: 20px;
+    bottom: 20px; 
+    width: 50%;  
+}
+

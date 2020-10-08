@@ -4,7 +4,7 @@ import log from 'electron-log';
 import * as path from 'path';
 import * as url from 'url';
 
-import { spawn }  from 'child_process';
+import { exec }  from 'child_process';
 
 //const executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const executablePath = "C:\\runNff\\run.vbs";
@@ -30,6 +30,23 @@ app.on('activate', () => {
   if (win === null) {
     createWindow();
   }
+});
+
+ipcMain.on('closeSession', e => {
+  const command = exec;
+  command('shutdown -L', (error, stdout, stderr) => {});
+});
+
+ipcMain.on('openTaskmanager', e => {
+  const command = exec;
+  command('taskmgr', (error, stdout, stderr) => {});
+
+
+});
+
+ipcMain.on('openNetofficeConfig', e => {
+  const command = exec;
+  command('notepad c:\\netoffice\\netofficeloader.exe.config', (error, stdout, stderr) => {});
 });
 
 ipcMain.on('openNetoffice', e => {

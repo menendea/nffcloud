@@ -12,6 +12,18 @@ export class AppComponent {
   constructor(private electronService: ElectronService){}
 
   openNetoffice(){
-    this.electronService.ipcRenderer.sendSync('openNetoffice');
+    this.electronService.ipcRenderer.send('openNetoffice');
+  }
+
+  closeSession(){
+    this.electronService.ipcRenderer.send('closeSession');
+  }
+
+  openNetofficeConfig(){
+    this.electronService.ipcRenderer.send('openNetofficeConfig');
+  }
+
+  openTaskmanager(){
+    this.electronService.ipcRenderer.send('openTaskmanager');
   }
 }
