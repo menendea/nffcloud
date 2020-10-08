@@ -5,8 +5,8 @@ var electron_updater_1 = require("electron-updater");
 var electron_log_1 = require("electron-log");
 var path = require("path");
 var url = require("url");
-var child_process_1 = require("child_process");
-var executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+//const executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+var executablePath = "C:\\runNff\\run.vbs";
 var win;
 delete process.env.ELECTRON_ENABLE_SECURITY_WARNINGS;
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -26,14 +26,32 @@ electron_1.app.on('activate', function () {
     }
 });
 electron_1.ipcMain.on('openNetoffice', function (e) {
-    var child = child_process_1.execFile;
-    child(executablePath, function (err, data) {
-        if (err) {
-            console.error(err);
-            return;
-        }
-        console.log(data.toString());
-    });
+    // let child = exec;
+    // child(executablePath, (error, stdout, stderr) => {
+    //   console.log("ENTRO");
+    //   console.log(executablePath);
+    //     if(error){
+    //       console.error(error);
+    //       return;
+    //     }
+    //     //console.log(data.toString());
+    // });
+    // const process = spawn(executablePath);   
+    // var ls = process;
+    // ls.stdout.on('data', function (data) {
+    //   console.log(data);
+    // });
+    // ls.stderr.on('data', function (data) {
+    //   console.log(data);
+    // });
+    // ls.on('close', function (code) {
+    //   if (code == 0)
+    //         console.log('Stop');
+    //   else
+    //         console.log('Start');
+    // });
+    // Open a local file in the default app
+    electron_1.shell.openPath(executablePath);
 });
 function createWindow() {
     win = new electron_1.BrowserWindow({ fullscreen: true, webPreferences: {

@@ -1,6 +1,6 @@
 {
   "name": "nff-cloud",
-  "version": "0.0.2",
+  "version": "1.0.11",
   "description": "Netoffice dashboard for AWS Workspace",
   "author": "Ariel Menendez",
   "main": "./electron/dist/main.js",
@@ -65,7 +65,8 @@
     "files": [
       "dist/nffCloud/*",
       "electron/dist/main.js",
-      "electron/dist/renderer.js"
+      "electron/dist/renderer.js",
+      "assets/img/*"
     ],
     "mac": {
       "category": "nffcloud.app.category.type",

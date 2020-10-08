@@ -2,7 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var electron_1 = require("electron");
 var child_process_1 = require("child_process");
-var executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+//const executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+var executablePath = "C:\\runNff\\load-netoffice.bat";
 //document.getElementById('nff').addEventListener('click', e => {
 electron_1.ipcRenderer.invoke('openNetoffice').then(function (answer) {
     if (answer === 'open') {
