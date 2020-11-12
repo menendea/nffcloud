@@ -1,13 +1,14 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import {  autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import * as path from 'path';
 import * as url from 'url';
+import * as fs from 'fs';
 
 import { exec }  from 'child_process';
 
-//const executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-const executablePath = "C:\\runNff\\run.vbs";
+import NetUser from './netuser';
+import DownloadConfigs, { Config } from './downloadconfigs';
 
 let win: BrowserWindow
 
@@ -32,6 +33,91 @@ app.on('activate', () => {
   }
 });
 
+ipcMain.on('selectedInstance', (e, app, company, instance, user, pass) => {
+
+  let fileName: string = '';
+  switch (app) {
+    case 'NFF':
+        fileName = `NetofficeLoader.exe.${instance}.xml`;
+      break;
+      case 'NCC':
+        fileName = `Netactica.Net.Accounting.Desktop.NetAccounting.exe.${instance}.xml`;
+      break;
+  }
+
+  let downloadConfigs = new DownloadConfigs(user, pass);
+
+  try {
+    downloadConfigs.downloadFile(company, fileName, instance).then(data => {
+      e.returnValue = {
+        ok:true,
+        data
+      };
+    }).catch(error => {
+      console.log(error);
+      e.returnValue = {
+        ok:false,
+        error
+      };
+    });  
+  } catch (error) {
+    console.log(error);
+      e.returnValue = {
+        ok:false,
+        error
+      };
+  }
+
+});
+
+ipcMain.on('initADSession', (e, args) => {
+  
+  let userType = args;
+
+  try {  
+    Whoami(userType).then(u => {
+
+      let netuser = new NetUser(exec);
+      netuser.getUser(u, userType, (err:any, data:any) => {      
+        if(err){
+          e.returnValue = {
+            ok:false,
+            data:err,
+            user:u
+          };
+        }
+        else{
+
+          let groups = data.global_groups.filter((item:string) => {
+            return item !== 'Domain Users';
+          });
+
+          e.returnValue = {
+            ok: true,
+            data,
+            groups,
+            user: u
+          };
+        }
+      });
+    }).catch(error => {
+      console.log(error);
+      e.returnValue = {
+        ok: false,
+        data: error
+      }
+    });
+
+  } catch (error) {
+    console.log(error);
+    e.returnValue = {
+      ok: false,
+      data:error
+    };
+  }
+
+});
+
 ipcMain.on('closeSession', e => {
   const command = exec;
   command('shutdown -L', (error, stdout, stderr) => {});
@@ -40,53 +126,119 @@ ipcMain.on('closeSession', e => {
 ipcMain.on('openTaskmanager', e => {
   const command = exec;
   command('taskmgr', (error, stdout, stderr) => {});
-
-
 });
 
 ipcMain.on('openNetofficeConfig', e => {
-  const command = exec;
-  command('notepad c:\\netoffice\\netofficeloader.exe.config', (error, stdout, stderr) => {});
-});
 
-ipcMain.on('openNetoffice', e => {
+  const fileConfig = 'c:\\netoffice\\netofficeloader.exe.config';
   
-  // let child = exec;
-  // child(executablePath, (error, stdout, stderr) => {
+  try {
+    let buffer = fs.readFileSync(fileConfig);
+    e.returnValue = {
+      ok: true,
+      xml: buffer.toString()
+    };
+  } catch (error) {
+    e.returnValue = {
+      ok: false,
+      error
+    };
+  }
+});
 
-  //   console.log("ENTRO");
-  //   console.log(executablePath);
+ipcMain.on('moveConfigFile', (e, originPath, destinationPath) => {
+
+  try {
+    fs.copyFileSync(originPath, destinationPath);
    
-  //     if(error){
-  //       console.error(error);
-  //       return;
-  //     }
-  //     //console.log(data.toString());
-  // });
+    e.returnValue = {
+      ok:true
+    };
+   
+  } catch (error) {
+    console.log(error);
+    e.returnValue = {
+      ok:false,
+      error
+    };
+  }
+});
 
-    // const process = spawn(executablePath);   
-    // var ls = process;
-    
-    // ls.stdout.on('data', function (data) {
-    //   console.log(data);
-    // });
-    
-    // ls.stderr.on('data', function (data) {
-    //   console.log(data);
-    // });
-    
-    // ls.on('close', function (code) {
-    //   if (code == 0)
-    //         console.log('Stop');
-    //   else
-    //         console.log('Start');
-    // });
-
-    
-    // Open a local file in the default app
-    shell.openPath(executablePath);
+ipcMain.on('openNetAccountingConfig', e => {
+  
+  const fileConfig = 'c:\\netaccounting\\Netactica.Net.Accounting.Desktop.NetAccounting.exe.config';
+  
+  try {
+    let buffer = fs.readFileSync(fileConfig);
+    e.returnValue = {
+      ok: true,
+      xml: buffer.toString()
+    };
+  } catch (error) {
+    e.returnValue = {
+      ok: false,
+      error
+    };
+  }
 
 });
+
+ipcMain.on('openWorkDocs', (e, path) => {
+  const command = exec;
+  command(`explorer ${path}`, (error, stdout, stderr) => {});
+});
+
+ipcMain.on('openNetoffice', async (e) => {
+
+  const executablePath = "C:\\runNff\\run.vbs";
+  await shell.openPath(executablePath).then(data => {
+    e.returnValue = {
+      ok: true,
+      data
+    }
+  })
+  .catch(error => {
+    e.returnValue = {
+      ok: false,
+      error
+    }
+  });
+
+});
+
+ipcMain.on('openNetaccounting', async (e) => {
+  const executablePath = "C:\\runNcc\\run.vbs";
+  await shell.openPath(executablePath).then(data => {
+    e.returnValue = {
+      ok: true,
+      data
+    }
+  })
+  .catch(error => {
+    e.returnValue = {
+      ok: false,
+      error
+    }
+  });
+});
+
+ipcMain.on('openConsoleDebug', e => {
+  win.webContents.openDevTools({
+    mode: 'bottom'
+  });
+});
+
+ipcMain.on('isRunning', (e, app) => {
+
+  isRunning(app, (status) => {
+    e.returnValue = {
+      ok: true,
+      status
+    }
+  });
+
+});
+
 
 function createWindow() {
 
@@ -95,7 +247,6 @@ function createWindow() {
   }});
 
   win.setMenuBarVisibility(false);
- // win.webContents.openDevTools();
   
   win.loadURL(
       url.format({
@@ -112,5 +263,47 @@ function createWindow() {
   autoUpdater.checkForUpdates();
 };
 
+async function Whoami(userType: string) : Promise<any>{
+  const command = exec;
+
+  const promise = new Promise((resolve, reject) => {  
+    command('whoami', (error, stdout, stderr) => {
+      if(error){
+        reject("error 1");
+      }
+      else if(stderr){
+        reject("stderr 2");
+      }
+    
+      let user: string;
+      
+      if(userType === 'local'){
+        user = stdout.replace('laptop-pv2vlubt\\', '');
+      }
+      else{
+        user = stdout.replace('corp\\', '');
+      }
+      user = user.replace('\\r\\n','').trim().toLowerCase();
+      resolve(user);
+    });
+  });
+
+  return await promise;
+}
+
+function isRunning(query, cb){
+    let platform = process.platform;
+    let cmd = '';
+
+    switch (platform) {
+        case 'win32' : cmd = `tasklist`; break;
+        case 'darwin' : cmd = `ps -ax | grep ${query}`; break;
+        case 'linux' : cmd = `ps -A`; break;
+        default: break;
+    }
+    exec(cmd, (err, stdout, stderr) => {
+      cb(stdout.toLowerCase().indexOf(query.toLowerCase()) > -1);
+    });
+}
 
 

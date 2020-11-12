@@ -1,42 +1,197 @@
+<header class="shadow fixed-top">
+ 
+  <nav class="navbar navbar-light bg-info">
+    <a class="navbar-brand">
+      <h5 class="float-left text-body">
+        <fa-icon [icon]="['fas', 'user']" size="1x"  class=""></fa-icon> {{fullname | titlecase}}
+      </h5>
+    </a>
+    <h6 class="float-right text-white mr-3">v {{appVersion}}</h6>
+  </nav>
+
+</header>
 
 <div class="vh-100 d-flex align-items-center">
   <div class="container">
     <div class="row justify-content-md-center">
-      <div class="col col-3 align-self-center center">
-        <button (click)="openNetoffice()" id="nff" type="button" class="btn btn-outline-light shadow">
+      <div *ngIf="nffInstance.length > 0" class="col col-3 align-self-center center">
+        <span *ngIf="!loadingNFF" class="badge badge-light shadow" style="position: relative; top: -30px; left: 10px; z-index: 1;">
+          <fa-icon *ngIf="disableNFF" [icon]="['fas', 'lock']" size="1x"  class=""></fa-icon>
+          <fa-icon *ngIf="!disableNFF" [icon]="['fas', 'lock-open']" size="1x"  class=""></fa-icon>
+        </span>
+        <button *ngIf="!loadingNFF" [disabled]="disableNFF" (click)="openNetoffice()" id="nff" type="button" class="btn btn-outline-light shadow">
           <fa-icon [icon]="['fas', 'desktop']" size="3x"  class=""></fa-icon>
         </button>
+        <div *ngIf="loadingNFF" class="spinner-grow" style="width: 3rem; height: 3rem;" role="status">
+          <span class="sr-only">Cargando...</span>
+        </div>
+      </div>
+
+      <div *ngIf="nccInstance.length > 0" class="col col-3 align-self-center center">
+        <span *ngIf="!loadingNCC" class="badge badge-light shadow" style="position: relative; top: -30px; left: 10px; z-index: 1;">
+          <fa-icon *ngIf="disableNCC" [icon]="['fas', 'lock']" size="1x"  class=""></fa-icon>
+          <fa-icon *ngIf="!disableNCC" [icon]="['fas', 'lock-open']" size="1x"  class=""></fa-icon>
+        </span>
+        <button *ngIf="!loadingNCC" [disabled]="disableNCC" (click)="openNetaccounting()" id="ncc" type="button" class="btn btn-outline-light shadow">
+          <fa-icon [icon]="['fas', 'calculator']" size="3x"  class=""></fa-icon>
+        </button>
+        <div *ngIf="loadingNCC" class="spinner-grow" style="width: 3rem; height: 3rem;" role="status">
+          <span class="sr-only">Cargando...</span>
+        </div>
       </div>
     </div>    
+
     <div class="row justify-content-md-center mt-2">
-      <div class="col col-3 align-self-center center">
+
+      <div *ngIf="nffInstance.length > 0" class="col col-3 align-self-center center">
         <p class="text-white">Iniciar <kbd>Netoffice</kbd></p>
+        <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
+          <button [disabled]="disableNFF" data-toggle="modal" data-target="#xmlModal" (click)="openNetofficeConfig()" type="button" class="btn btn-sm btn-outline-secondary">
+            <fa-icon [icon]="['fas', 'cog']" size="1x"  class=""></fa-icon>
+          </button>
+          <div class="btn-group" role="group">
+            <button id="btnRegion" type="button" class="btn btn-sm btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              {{nffInstanceSelected.name}}
+            </button>
+            <div class="dropdown-menu" aria-labelledby="btnRegion">
+              <button *ngFor="let item of nffInstance" class="dropdown-item" (click)="nffSelection(item)">{{item.name}}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="nccInstance.length > 0" class="col col-3 align-self-center center">
+        <p class="text-white">Iniciar <kbd>Netaccouting</kbd></p>
+        <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
+          <button [disabled]="disableNCC" data-toggle="modal" data-target="#xmlModal"  (click)="openNetAccountingConfig()" type="button" class="btn btn-sm btn-outline-secondary">
+            <fa-icon [icon]="['fas', 'cog']" size="1x"  class=""></fa-icon>
+          </button>
+          <div class="btn-group" role="group">
+            <button id="btnRegion" type="button" class="btn btn-sm btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              {{nccInstanceSelected.name}}
+            </button>
+            <div class="dropdown-menu" aria-labelledby="btnRegion">
+              <button *ngFor="let item of nccInstance" class="dropdown-item" (click)="nccSelection(item)">{{item.name}}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div *ngIf="hasError" class="row justify-content-md-center mt-4">
+      <div class="col col-7">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <h4 class="alert-heading">Opps! {{errorCode}}</h4>
+          <button (click)="hasError = false;" type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <p>Ocurrio un error al descargar el archivo de configuración de la instancia.</p>
+          <hr>
+          <p class="mb-0">Contacte al administrador del sistema para resolver el inconveniente.</p>
+        </div>
       </div>
     </div>
+
   </div>
 </div>
 
 <footer>
   <div class="row configBtn">
     <div class="col-4">
-      <button (click)="closeSession()" type="button" class="float-left btn btn-outline-info shadow-sm">
-        <fa-icon [icon]="['fas', 'sign-out-alt']" size="1x"  class=""></fa-icon>
-        Finalizar Sesión 
+      <button data-toggle="tooltip" data-placement="right" title="Finalizar sesión" (click)="closeSession()" type="button" class="float-left btn btn-warning shadow-sm">
+        <fa-icon [icon]="['fas', 'sign-out-alt']" size="1x"  class=""></fa-icon>  
       </button>
     </div>
     <div class="col-1">
-      <button (click)="openNetofficeConfig()" type="button" class="float-left btn btn-outline-secondary shadow-sm">
-        <fa-icon [icon]="['fas', 'cog']" size="1x"  class=""></fa-icon>
+      <button data-toggle="tooltip" data-placement="top" title="Workdocs" (click)="openWorkDocs()" type="button" class="float-left btn btn-outline-light shadow-sm">
+        <fa-icon [icon]="['fas', 'folder-open']" size="1x"  class=""></fa-icon>
       </button>
     </div>
     <div class="col-1">
-      <button (click)="openTaskmanager()" type="button" class="float-left btn btn-outline-secondary shadow-sm">
+      <button data-toggle="tooltip" data-placement="top" title="Administrador de tareas" (click)="openTaskmanager()" type="button" class="float-left btn btn-outline-light shadow-sm">
         <fa-icon [icon]="['fas', 'microchip']" size="1x"  class=""></fa-icon>
+      </button>
+    </div>
+    <div class="col-1">
+      <button data-toggle="modal" data-target="#settingsModal" type="button" class="float-left btn btn-outline-secondary shadow-sm">
+        <fa-icon [icon]="['fas', 'user-cog']" size="1x"  class=""></fa-icon>
       </button>
     </div>
   </div>  
   
   <div class="float-right">
-    <img src="https://images.netactica.com/nffcloud/nff-background.jpg" width="300px" alt="">
+    <img src="https://images.netactica.com/nffcloud/nff-background.jpg?v=1" width="300px" alt="">
   </div>
 </footer>
+
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+   
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="settingsModalLabel">
+          <fa-icon [icon]="['fas', 'user-cog']" size="1x"  class=""></fa-icon>
+          Configuración de Instancias
+        </h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger" role="alert">
+          Si no esta seguro <strong>NO MODIFIQUE</strong> estos parámetros.
+        </div>
+        <form>
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Empresa:</label>
+            <input #company id="company" type="text" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Usuario:</label>
+            <input #user id="user" type="password" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Contraseña:</label>
+            <input #password id="password" type="password" class="form-control">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button (click)="openConsoleDebug()" type="button" class="btn btn-outline-danger mr-5" style="position: relative; right: 195px;" data-dismiss="modal">
+          <fa-icon [icon]="['fas', 'bug']" size="1x"  class=""></fa-icon>
+        </button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button (click)="saveConfigParams(company.value, user.value, password.value)" type="button" class="btn btn-danger">Guardar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<div class="modal fade" id="xmlModal" tabindex="-1" aria-labelledby="xmlModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+   
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="xmlModalLabel">
+          <fa-icon [icon]="['fas', 'file-code']" size="1x"  class=""></fa-icon>
+          Archivo de Configuración
+        </h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+   
+        <div style="height: 300px;" class="xmlConfig"></div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+
+  </div>
+</div>

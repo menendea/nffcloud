@@ -1,21 +1,28 @@
-import { ipcRenderer } from 'electron';
-import {execFile}  from 'child_process';
+// import { ipcRenderer } from 'electron';
+// import { exec }  from 'child_process';
 
-//const executablePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-const executablePath = "C:\\runNff\\load-netoffice.bat";
+// ipcRenderer.emit('isRunning', (e, app) => {
+    
+//     isRunning(app, (status) => {
+//         e.returnValue = {
+//           ok: true,
+//           status
+//         }
+//     });
 
-//document.getElementById('nff').addEventListener('click', e => {
-ipcRenderer.invoke( 'openNetoffice' ).then( answer => {
-    if(answer === 'open'){
-        let child = execFile;
-        child(executablePath, function(err, data) {
-            if(err){
-            console.error(err);
-            return;
-            }
-            console.log(data.toString());
-        });
-    }  
-});
-//});
+// });
 
+
+// function isRunning(query, cb){
+//     let platform = process.platform;
+//     let cmd = '';
+//     switch (platform) {
+//         case 'win32' : cmd = `tasklist`; break;
+//         case 'darwin' : cmd = `ps -ax | grep ${query}`; break;
+//         case 'linux' : cmd = `ps -A`; break;
+//         default: break;
+//     }
+//     exec(cmd, (err, stdout, stderr) => {
+//         cb(stdout.toLowerCase().indexOf(query.toLowerCase()) > -1);
+//     });
+// }
