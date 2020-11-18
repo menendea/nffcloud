@@ -8,8 +8,8 @@ class DownloadConfigs{
         this.config = new Config(userName, password);
     }
     
-    downloadFile = async (companyName: string, configFileName: string, instance: string) => {
-        return await this.config.download(companyName, configFileName, instance);
+    downloadFile = async (userLogged: string, companyName: string, configFileName: string, instance: string) => {
+        return await this.config.download(userLogged, companyName, configFileName, instance);
     }
 }
 
@@ -23,7 +23,7 @@ class Config{
         this.password = password;
     }
 
-    download = (companyName: string, configFileName: string, instance: string) => {
+    download = (userLogged: string, companyName: string, configFileName: string, instance: string) => {
         
         let promise =  new Promise(async (res, rej) => {
 
@@ -38,13 +38,20 @@ class Config{
           
                 if(response.statusCode === 200){
                     let fileToSave = configFileName.replace(`.${instance}.xml`, '.config');
-                    fs.writeFile(fileToSave, response.body, function (err) {
+
+                    let path  = `D:\\Users\\${userLogged}\\AppData\\Local\\Programs\\nff-cloud\\${fileToSave}`;
+
+                    // TODO no olvidar comentar esta linea al publicar para produccion
+                    path = fileToSave;
+
+                    fs.writeFile(path, response.body, function (err) {
                         if(err) {
                             console.log(err);
                             rej({
                                 company: companyName,
                                 fileName: configFileName,
-                                message: `Error al intentar descargar el archivo ${configFileName}`
+                                message: `Error al intentar descargar el archivo ${configFileName}`,
+                                error: err
                             });   
                         }
                         else{
@@ -73,11 +80,7 @@ class Config{
                         statusCode: 401
                     });
                 }
-                else{
-                    console.log(err);
-                    console.log(response);
-                }
-
+               
             });
             
         });

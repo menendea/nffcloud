@@ -42,6 +42,8 @@ var electron_log_1 = require("electron-log");
 var path = require("path");
 var url = require("url");
 var fs = require("fs");
+var taskkill = require('taskkill');
+var tasklist = require('win-tasklist');
 var child_process_1 = require("child_process");
 var netuser_1 = require("./netuser");
 var downloadconfigs_1 = require("./downloadconfigs");
@@ -63,7 +65,7 @@ electron_1.app.on('activate', function () {
         createWindow();
     }
 });
-electron_1.ipcMain.on('selectedInstance', function (e, app, company, instance, user, pass) {
+electron_1.ipcMain.on('selectedInstance', function (e, userLogged, app, company, instance, user, pass) {
     var fileName = '';
     switch (app) {
         case 'NFF':
@@ -75,7 +77,7 @@ electron_1.ipcMain.on('selectedInstance', function (e, app, company, instance, u
     }
     var downloadConfigs = new downloadconfigs_1.default(user, pass);
     try {
-        downloadConfigs.downloadFile(company, fileName, instance).then(function (data) {
+        downloadConfigs.downloadFile(userLogged, company, fileName, instance).then(function (data) {
             e.returnValue = {
                 ok: true,
                 data: data
@@ -193,15 +195,15 @@ electron_1.ipcMain.on('openNetAccountingConfig', function (e) {
     }
 });
 electron_1.ipcMain.on('openWorkDocs', function (e, path) {
-    var command = child_process_1.exec;
-    command("explorer " + path, function (error, stdout, stderr) { });
+    var command = child_process_1.execFileSync;
+    command(path);
 });
 electron_1.ipcMain.on('openNetoffice', function (e) { return __awaiter(void 0, void 0, void 0, function () {
     var executablePath;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                executablePath = "C:\\runNff\\run.vbs";
+                executablePath = 'C:\\netoffice\\netofficeloader.exe';
                 return [4 /*yield*/, electron_1.shell.openPath(executablePath).then(function (data) {
                         e.returnValue = {
                             ok: true,
@@ -225,7 +227,7 @@ electron_1.ipcMain.on('openNetaccounting', function (e) { return __awaiter(void 
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                executablePath = "C:\\runNcc\\run.vbs";
+                executablePath = 'C:\\netaccounting\\Netactica.Net.Accounting.Desktop.NetAccountingUpdater.exe';
                 return [4 /*yield*/, electron_1.shell.openPath(executablePath).then(function (data) {
                         e.returnValue = {
                             ok: true,
@@ -249,11 +251,14 @@ electron_1.ipcMain.on('openConsoleDebug', function (e) {
         mode: 'bottom'
     });
 });
+electron_1.ipcMain.on('killProcess', function (e, pid) {
+    killProcess(pid);
+});
 electron_1.ipcMain.on('isRunning', function (e, app) {
-    isRunning(app, function (status) {
+    isRunning(app, function (tasks, error) {
         e.returnValue = {
             ok: true,
-            status: status
+            tasks: tasks
         };
     });
 });
@@ -272,7 +277,6 @@ function createWindow() {
     });
     electron_updater_1.autoUpdater.checkForUpdates();
 }
-;
 function Whoami(userType) {
     return __awaiter(this, void 0, void 0, function () {
         var command, promise;
@@ -306,22 +310,29 @@ function Whoami(userType) {
     });
 }
 function isRunning(query, cb) {
-    var platform = process.platform;
-    var cmd = '';
-    switch (platform) {
-        case 'win32':
-            cmd = "tasklist";
-            break;
-        case 'darwin':
-            cmd = "ps -ax | grep " + query;
-            break;
-        case 'linux':
-            cmd = "ps -A";
-            break;
-        default: break;
-    }
-    child_process_1.exec(cmd, function (err, stdout, stderr) {
-        cb(stdout.toLowerCase().indexOf(query.toLowerCase()) > -1);
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, tasklist.getProcessInfo(query, { verbose: true }).then(function (process) {
+                        cb(process, null);
+                    })];
+                case 1:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+function killProcess(pid) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, taskkill(pid)];
+                case 1:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
     });
 }
 //# sourceMappingURL=main.js.map

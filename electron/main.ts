@@ -5,7 +5,10 @@ import * as path from 'path';
 import * as url from 'url';
 import * as fs from 'fs';
 
-import { exec }  from 'child_process';
+const taskkill = require('taskkill');
+const tasklist = require('win-tasklist');
+
+import { exec, execFileSync }  from 'child_process';
 
 import NetUser from './netuser';
 import DownloadConfigs, { Config } from './downloadconfigs';
@@ -33,7 +36,7 @@ app.on('activate', () => {
   }
 });
 
-ipcMain.on('selectedInstance', (e, app, company, instance, user, pass) => {
+ipcMain.on('selectedInstance', (e, userLogged, app, company, instance, user, pass) => {
 
   let fileName: string = '';
   switch (app) {
@@ -48,7 +51,7 @@ ipcMain.on('selectedInstance', (e, app, company, instance, user, pass) => {
   let downloadConfigs = new DownloadConfigs(user, pass);
 
   try {
-    downloadConfigs.downloadFile(company, fileName, instance).then(data => {
+    downloadConfigs.downloadFile(userLogged, company, fileName, instance).then(data => {
       e.returnValue = {
         ok:true,
         data
@@ -184,13 +187,15 @@ ipcMain.on('openNetAccountingConfig', e => {
 });
 
 ipcMain.on('openWorkDocs', (e, path) => {
-  const command = exec;
-  command(`explorer ${path}`, (error, stdout, stderr) => {});
+  const command = execFileSync;
+
+  command(path);
 });
 
 ipcMain.on('openNetoffice', async (e) => {
 
-  const executablePath = "C:\\runNff\\run.vbs";
+  const executablePath = 'C:\\netoffice\\netofficeloader.exe';
+
   await shell.openPath(executablePath).then(data => {
     e.returnValue = {
       ok: true,
@@ -207,7 +212,9 @@ ipcMain.on('openNetoffice', async (e) => {
 });
 
 ipcMain.on('openNetaccounting', async (e) => {
-  const executablePath = "C:\\runNcc\\run.vbs";
+
+  const executablePath = 'C:\\netaccounting\\Netactica.Net.Accounting.Desktop.NetAccountingUpdater.exe';
+
   await shell.openPath(executablePath).then(data => {
     e.returnValue = {
       ok: true,
@@ -228,13 +235,17 @@ ipcMain.on('openConsoleDebug', e => {
   });
 });
 
+ipcMain.on('killProcess', (e, pid) => {
+  killProcess(pid);
+});
+
 ipcMain.on('isRunning', (e, app) => {
 
-  isRunning(app, (status) => {
-    e.returnValue = {
-      ok: true,
-      status
-    }
+  isRunning(app, (tasks: any[], error: any) => {   
+      e.returnValue = {
+        ok: true,
+        tasks
+      }
   });
 
 });
@@ -261,7 +272,7 @@ function createWindow() {
   });
 
   autoUpdater.checkForUpdates();
-};
+}
 
 async function Whoami(userType: string) : Promise<any>{
   const command = exec;
@@ -291,19 +302,14 @@ async function Whoami(userType: string) : Promise<any>{
   return await promise;
 }
 
-function isRunning(query, cb){
-    let platform = process.platform;
-    let cmd = '';
+async function isRunning(query: any, cb: Function){
+  await tasklist.getProcessInfo(query, {verbose: true}).then((process: any)=>{
+    cb(process, null);
+  });
+}
 
-    switch (platform) {
-        case 'win32' : cmd = `tasklist`; break;
-        case 'darwin' : cmd = `ps -ax | grep ${query}`; break;
-        case 'linux' : cmd = `ps -A`; break;
-        default: break;
-    }
-    exec(cmd, (err, stdout, stderr) => {
-      cb(stdout.toLowerCase().indexOf(query.toLowerCase()) > -1);
-    });
+async function killProcess(pid: number){
+  await taskkill(pid);
 }
 
 

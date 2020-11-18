@@ -1,7 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core'; 
 import { ElectronService } from 'ngx-electron';
-import { inflate } from 'zlib';
 import { environment } from '../environments/environment';
+
+import * as _ from 'underscore';
 
 const { version: appVersion } = require('../../package.json')
 
@@ -11,6 +12,13 @@ declare interface AppInstance {
   code: string;
   name: string;
 };
+
+declare interface Process {
+  name: string,
+  pid: number,
+  instance: AppInstance,
+  instanceType: string // NFF | NCC
+}
 
 @Component({
   selector: 'app-root',
@@ -36,6 +44,8 @@ export class AppComponent implements OnInit {
 
   nffInstance: AppInstance[] = [];
   nccInstance: AppInstance[] = [];
+
+  activeInstances: Process[] = [];
 
   nffInstanceSelected: AppInstance = {
     name: 'Instancia',
@@ -139,6 +149,10 @@ export class AppComponent implements OnInit {
 
     }
 
+    if(environment.production){
+      this.openWorkDocs();
+    }
+
   }
 
   async nffSelection(instance: AppInstance){
@@ -220,25 +234,53 @@ export class AppComponent implements OnInit {
   async openNetaccounting(){
     this.loadingNCC = true;
     let status = this.electronService.ipcRenderer.sendSync('openNetaccounting');
-
+    
     if(status.ok){
 
       const promise = new Promise<any>(res => {
-        
         const self = this;
         let count = 0; 
         let intervalObject = setInterval(function () { 
           count++; 
-          let isRunning = self.isRunning('Netactica.Net.Accounting');    
-          if (count === 60 || isRunning) {
+          let isRunning = self.isRunning('Netactica.Net.Accounting.Desktop.NetAccounting.exe');    
+          
+          if (isRunning.tasks !== null) {
+            if(self.activeInstances.length < isRunning.tasks.length){
               clearInterval(intervalObject);
-              res(false); 
+              res({
+                loading:false,
+                tasks: isRunning.tasks
+              }); 
+            } 
+          }
+          
+          if(count === 60){
+            console.log('TIME OUT: loading tasks running');
+            res({
+              loading:false,
+              tasks: isRunning.tasks
+            }); 
           } 
+
         }, 1000);       
       });
 
-      await promise.then(value => {
-        this.loadingNCC = value; 
+      await promise.then(data => {
+        this.loadingNCC = data.loading; 
+        console.log(data);
+        this.activeInstances = _.map(data.tasks, element => { 
+          return {
+            pid: element.pid,
+            name: element.process,
+            instanceType: 'NCC',
+            instance: {
+              name: this.nccInstanceSelected.name,
+              code: this.nccInstanceSelected.code
+            }
+          };
+        });
+
+        console.log(this.activeInstances);
       });
 
     }
@@ -248,11 +290,19 @@ export class AppComponent implements OnInit {
 
   }
 
-  isRunning(app: string): boolean{
-    console.log(app);
-    let status = this.electronService.ipcRenderer.sendSync('isRunning', app);
-    console.log(status);
-    return status.status
+  isRunning(app: string): any{
+    let tasks = this.electronService.ipcRenderer.sendSync('isRunning', app);
+    return tasks;
+  }
+
+  killProcess(pid: number){
+    this.electronService.ipcRenderer.send('killProcess', pid);
+
+    this.activeInstances = this.activeInstances.filter(item => {
+      if(item.pid !== pid){
+        return item;
+      }
+    });
   }
 
   closeSession(){
@@ -295,11 +345,11 @@ export class AppComponent implements OnInit {
 
   openWorkDocs(){
 
-    let path = `D:\\Users\\${this.userName}\\WorkDocs`;
+    let path = 'C:\\Program Files\\Amazon\\AmazonWorkDocsSetup.exe';
 
     // para DEV
     if(!environment.production){
-      path = 'C:\\';
+      path = 'C:\\Program Files\\Adobe\\Adobe Photoshop CC 2019\\Photoshop.exe';
     }
 
     this.electronService.ipcRenderer.send('openWorkDocs', path);
@@ -307,7 +357,12 @@ export class AppComponent implements OnInit {
 
   moveConfigFile(instance, fileName){
 
-    let origin: string = fileName;
+    let origin: string = `D:\\Users\\${this.userName}\\AppData\\Local\\Programs\\nff-cloud\\${fileName}`;
+    
+    if(!environment.production){
+      origin = fileName;
+    }
+    
     let destination: string = '';
    
     switch (instance) {
@@ -345,7 +400,6 @@ export class AppComponent implements OnInit {
     }
   }
 
-
   openConsoleDebug(){
     this.electronService.ipcRenderer.send('openConsoleDebug');
   }
@@ -355,6 +409,7 @@ export class AppComponent implements OnInit {
     let promise = new Promise<string>((resolve, reject) => {
       
       let ipcResponse = this.electronService.ipcRenderer.sendSync('selectedInstance', 
+        this.userName,
         app, 
         this.lsCompany, 
         instance, 

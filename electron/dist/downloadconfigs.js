@@ -43,10 +43,10 @@ var DownloadConfigs = /** @class */ (function () {
     function DownloadConfigs(userName, password) {
         var _this = this;
         this.config = null;
-        this.downloadFile = function (companyName, configFileName, instance) { return __awaiter(_this, void 0, void 0, function () {
+        this.downloadFile = function (userLogged, companyName, configFileName, instance) { return __awaiter(_this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.config.download(companyName, configFileName, instance)];
+                    case 0: return [4 /*yield*/, this.config.download(userLogged, companyName, configFileName, instance)];
                     case 1: return [2 /*return*/, _a.sent()];
                 }
             });
@@ -58,7 +58,7 @@ var DownloadConfigs = /** @class */ (function () {
 var Config = /** @class */ (function () {
     function Config(userName, password) {
         var _this = this;
-        this.download = function (companyName, configFileName, instance) {
+        this.download = function (userLogged, companyName, configFileName, instance) {
             var promise = new Promise(function (res, rej) { return __awaiter(_this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
@@ -72,13 +72,17 @@ var Config = /** @class */ (function () {
                             }, function (err, response) {
                                 if (response.statusCode === 200) {
                                     var fileToSave_1 = configFileName.replace("." + instance + ".xml", '.config');
-                                    fs.writeFile(fileToSave_1, response.body, function (err) {
+                                    var path = "D:\\Users\\" + userLogged + "\\AppData\\Local\\Programs\\nff-cloud\\" + fileToSave_1;
+                                    // TODO no olvidar comentar esta linea al publicar para produccion
+                                    path = fileToSave_1;
+                                    fs.writeFile(path, response.body, function (err) {
                                         if (err) {
                                             console.log(err);
                                             rej({
                                                 company: companyName,
                                                 fileName: configFileName,
-                                                message: "Error al intentar descargar el archivo " + configFileName
+                                                message: "Error al intentar descargar el archivo " + configFileName,
+                                                error: err
                                             });
                                         }
                                         else {
@@ -106,10 +110,6 @@ var Config = /** @class */ (function () {
                                         message: "Error al intentar descargar el archivo " + configFileName,
                                         statusCode: 401
                                     });
-                                }
-                                else {
-                                    console.log(err);
-                                    console.log(response);
                                 }
                             })];
                         case 1:
