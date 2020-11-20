@@ -13,7 +13,7 @@
     <form class="form-inline">
 
       <div *ngFor="let instance of activeInstances" class="btn-group mr-2" role="group" aria-label="instance">
-        <button data-toggle="tooltip" data-placement="bottom" title="Maximizar" class="btn btn-sm btn-outline-dark" type="button">
+        <button (click)="maximizeApp(instance.pid)" data-toggle="tooltip" data-placement="bottom" title="Maximizar" class="btn btn-sm btn-outline-dark" type="button">
           <fa-icon *ngIf="instance.instanceType === 'NFF'" [icon]="['fas', 'desktop']" size="1x"  class=""></fa-icon> 
           <fa-icon *ngIf="instance.instanceType === 'NCC'" [icon]="['fas', 'calculator']" size="1x"  class=""></fa-icon> 
           {{instance.instance.name}}

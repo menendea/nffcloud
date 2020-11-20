@@ -42,7 +42,7 @@ class Config{
                     let path  = `D:\\Users\\${userLogged}\\AppData\\Local\\Programs\\nff-cloud\\${fileToSave}`;
 
                     // TODO no olvidar comentar esta linea al publicar para produccion
-                    path = fileToSave;
+                   // path = fileToSave;
 
                     fs.writeFile(path, response.body, function (err) {
                         if(err) {

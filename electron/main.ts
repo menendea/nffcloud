@@ -7,6 +7,7 @@ import * as fs from 'fs';
 
 const taskkill = require('taskkill');
 const tasklist = require('win-tasklist');
+var processWindows = require("node-process-windows");
 
 import { exec, execFileSync }  from 'child_process';
 
@@ -241,7 +242,7 @@ ipcMain.on('killProcess', (e, pid) => {
 
 ipcMain.on('isRunning', (e, app) => {
 
-  isRunning(app, (tasks: any[], error: any) => {   
+  isRunning(app, (tasks: any[]) => {   
       e.returnValue = {
         ok: true,
         tasks
@@ -250,6 +251,19 @@ ipcMain.on('isRunning', (e, app) => {
 
 });
 
+ipcMain.on('maximizeApp', (e, pid) => {
+
+  let activeProcesses = processWindows.getProcesses(function(err, processes) {
+    
+    let appProcesses = processes.filter(p => p.pid === pid);
+
+    if(appProcesses.length > 0) {
+        processWindows.focusWindow(appProcesses[0]);
+    }
+
+  });
+
+});
 
 function createWindow() {
 
@@ -303,8 +317,8 @@ async function Whoami(userType: string) : Promise<any>{
 }
 
 async function isRunning(query: any, cb: Function){
-  await tasklist.getProcessInfo(query, {verbose: true}).then((process: any)=>{
-    cb(process, null);
+  await tasklist.getProcessInfo(query, {verbose: false}).then((process: any)=>{
+    cb(process);
   });
 }
 

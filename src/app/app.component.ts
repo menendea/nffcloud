@@ -3,6 +3,7 @@ import { ElectronService } from 'ngx-electron';
 import { environment } from '../environments/environment';
 
 import * as _ from 'underscore';
+import { String } from 'aws-sdk/clients/apigateway';
 
 const { version: appVersion } = require('../../package.json')
 
@@ -46,6 +47,9 @@ export class AppComponent implements OnInit {
   nccInstance: AppInstance[] = [];
 
   activeInstances: Process[] = [];
+  activeNCCInstances: Process[] = [];
+  activeNFFInstances: Process[] = [];
+
 
   nffInstanceSelected: AppInstance = {
     name: 'Instancia',
@@ -153,6 +157,8 @@ export class AppComponent implements OnInit {
       this.openWorkDocs();
     }
 
+    this.evalAppIsRunning();
+
   }
 
   async nffSelection(instance: AppInstance){
@@ -190,7 +196,7 @@ export class AppComponent implements OnInit {
     
   }
 
-  saveConfigParams(company, user, password){
+  saveConfigParams(company: string, user: string, password: string){
     localStorage.setItem('company', company);
     localStorage.setItem('user', user);
     localStorage.setItem('password', password);
@@ -200,93 +206,68 @@ export class AppComponent implements OnInit {
     $('#settingsModal').modal('hide')
   }
 
-  async openNetoffice(){
+  openNetoffice(){
     this.loadingNFF = true;
     let status = this.electronService.ipcRenderer.sendSync('openNetoffice');
 
     if(status.ok){
-     
-      const promise = new Promise<any>(res => {
-        
-        const self = this;
-        let count = 0; 
-        let intervalObject = setInterval(function () { 
-          count++; 
-          let isRunning = self.isRunning('Netoffice.exe');    
-          if (count === 60 || isRunning) {
-              clearInterval(intervalObject);
-              res(false); 
-          } 
-        }, 1000);       
-      });
-
-      await promise.then(value => {
-        this.loadingNFF = value; 
-      });      
-
+      this.evalProcessRunning(this.activeNFFInstances, 'NFF', 'Netoffice.exe').then(value => {
+        this.activeNFFInstances = value;
+        this.activeInstances = _.union(this.activeNFFInstances, this.activeNCCInstances);
+      });  
     }
     else if(!status.ok){
       console.log(status.error);
     }
-
   }
 
-  async openNetaccounting(){
+  openNetaccounting(){
     this.loadingNCC = true;
     let status = this.electronService.ipcRenderer.sendSync('openNetaccounting');
     
     if(status.ok){
-
-      const promise = new Promise<any>(res => {
-        const self = this;
-        let count = 0; 
-        let intervalObject = setInterval(function () { 
-          count++; 
-          let isRunning = self.isRunning('Netactica.Net.Accounting.Desktop.NetAccounting.exe');    
-          
-          if (isRunning.tasks !== null) {
-            if(self.activeInstances.length < isRunning.tasks.length){
-              clearInterval(intervalObject);
-              res({
-                loading:false,
-                tasks: isRunning.tasks
-              }); 
-            } 
-          }
-          
-          if(count === 60){
-            console.log('TIME OUT: loading tasks running');
-            res({
-              loading:false,
-              tasks: isRunning.tasks
-            }); 
-          } 
-
-        }, 1000);       
+      this.evalProcessRunning(this.activeNCCInstances ,'NCC', 'Netactica.Net.Accounting.Desktop.NetAccounting.exe').then(value => {
+        this.activeNCCInstances = value;
+        this.activeInstances = _.union(this.activeNFFInstances, this.activeNCCInstances);
       });
-
-      await promise.then(data => {
-        this.loadingNCC = data.loading; 
-        console.log(data);
-        this.activeInstances = _.map(data.tasks, element => { 
-          return {
-            pid: element.pid,
-            name: element.process,
-            instanceType: 'NCC',
-            instance: {
-              name: this.nccInstanceSelected.name,
-              code: this.nccInstanceSelected.code
-            }
-          };
-        });
-
-        console.log(this.activeInstances);
-      });
-
     }
     else if(!status.ok){
       console.log(status.error);
     }
+  }
+
+  evalAppIsRunning(){
+
+    const self = this;
+    
+    setInterval(() => {
+
+      let runningNCC = self.isRunning('Netactica.Net.Accounting.Desktop.NetAccounting.exe');
+      let runningNFF = self.isRunning('Netoffice.exe');
+      let activeInstances = _.clone(self.activeInstances);
+     
+      _.forEach(self.activeInstances, instance => {
+        switch (instance.instanceType) {
+          case 'NFF':
+            let prNff = _.find(runningNFF.tasks, item => { return instance.pid === item.pid; });
+            if(prNff === undefined){
+              activeInstances = _.filter(activeInstances, ai => { return ai.pid !== instance.pid; });
+            }
+            break;
+          case 'NCC':
+            let prNcc = _.find(runningNCC.tasks, item => { return instance.pid === item.pid; });
+            if(prNcc === undefined){
+              activeInstances = _.filter(activeInstances, ai => { return ai.pid !== instance.pid; });
+            }
+            break;
+        }
+
+      });
+
+      self.activeInstances = activeInstances;
+
+      console.log(self.activeInstances.length);
+    }, 1000);
 
   }
 
@@ -303,6 +284,10 @@ export class AppComponent implements OnInit {
         return item;
       }
     });
+  }
+
+  maximizeApp(pid: number){
+    this.electronService.ipcRenderer.send('maximizeApp', pid);
   }
 
   closeSession(){
@@ -355,7 +340,7 @@ export class AppComponent implements OnInit {
     this.electronService.ipcRenderer.send('openWorkDocs', path);
   }
 
-  moveConfigFile(instance, fileName){
+  moveConfigFile(instance: string, fileName: String){
 
     let origin: string = `D:\\Users\\${this.userName}\\AppData\\Local\\Programs\\nff-cloud\\${fileName}`;
     
@@ -426,6 +411,85 @@ export class AppComponent implements OnInit {
 
     return promise;
   }
+
+  private async evalProcessRunning(activeInstances: Process[], app: string, exe: string): Promise<Process[]>{
+
+    const promise = new Promise<any>(res => {
+      const self = this;
+      let count = 0; 
+      let intervalObject = setInterval(() => { 
+        count++; 
+        let isRunning = self.isRunning(exe);    
+      
+        if (isRunning.tasks !== null) {
+
+          if(activeInstances.length < isRunning.tasks.length){
+          
+            clearInterval(intervalObject);
+            res({
+              loading:false,
+              tasks: isRunning.tasks
+            }); 
+          } 
+
+        }
+        
+        if(count === 60){
+          clearInterval(intervalObject);
+          console.log(`TIME OUT: loading tasks running when ${app}`);
+          res({
+            loading:false,
+            tasks: isRunning.tasks
+          }); 
+        } 
+
+      }, 1000);       
+    });
+
+    await promise.then(data => {
+
+      let name: any;
+      let code: any;
+
+      activeInstances = _.map(data.tasks, element => { 
+        
+        let currrentInstance: Process = _.find(activeInstances, p => p.pid === element.pid); //.filter(p => p.pid === element.pid);
+        
+        switch (app) {
+          case 'NCC':
+            this.loadingNCC = data.loading; 
+            name = this.nccInstanceSelected.name;
+            code = this.nccInstanceSelected.code;
+            break;
+          case 'NFF':
+            this.loadingNFF = data.loading; 
+            name = this.nffInstanceSelected.name;
+            code = this.nffInstanceSelected.code;
+            break;
+        }
+
+        if(currrentInstance !== undefined){
+          name = currrentInstance.instance.name;
+          code = currrentInstance.instance.code;
+        }
+
+        return {
+          pid: element.pid,
+          name: element.process,
+          instanceType: app,
+          instance: {
+            name,
+            code
+          }
+        };
+      }); 
+
+    });
+
+    return activeInstances;
+
+  }
+
 }
 
 const countryListAlpha2 = {
