@@ -74,7 +74,7 @@ var Config = /** @class */ (function () {
                                     var fileToSave_1 = configFileName.replace("." + instance + ".xml", '.config');
                                     var path = "D:\\Users\\" + userLogged + "\\AppData\\Local\\Programs\\nff-cloud\\" + fileToSave_1;
                                     // TODO no olvidar comentar esta linea al publicar para produccion
-                                    path = fileToSave_1;
+                                    // path = fileToSave;
                                     fs.writeFile(path, response.body, function (err) {
                                         if (err) {
                                             console.log(err);

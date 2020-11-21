@@ -266,7 +266,6 @@ export class AppComponent implements OnInit {
 
       self.activeInstances = activeInstances;
 
-      console.log(self.activeInstances.length);
     }, 1000);
 
   }
@@ -287,7 +286,14 @@ export class AppComponent implements OnInit {
   }
 
   maximizeApp(pid: number){
-    this.electronService.ipcRenderer.send('maximizeApp', pid);
+    let status = this.electronService.ipcRenderer.sendSync('maximizeApp', pid);
+
+    if(!status.ok){
+      console.log(status);
+    }
+    // else{
+    //   console.log(status);
+    // }
   }
 
   closeSession(){

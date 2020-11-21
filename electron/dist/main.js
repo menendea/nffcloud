@@ -36,6 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+require('hazardous'); //soluciona problemas con .asar.unpacked
 var electron_1 = require("electron");
 var electron_updater_1 = require("electron-updater");
 var electron_log_1 = require("electron-log");
@@ -44,6 +45,7 @@ var url = require("url");
 var fs = require("fs");
 var taskkill = require('taskkill');
 var tasklist = require('win-tasklist');
+var processWindows = require("node-process-windows");
 var child_process_1 = require("child_process");
 var netuser_1 = require("./netuser");
 var downloadconfigs_1 = require("./downloadconfigs");
@@ -65,6 +67,14 @@ electron_1.app.on('activate', function () {
         createWindow();
     }
 });
+// process
+//   .on('unhandledRejection', (reason, p) => {
+//     console.error(reason, 'Unhandled Rejection at Promise', p);
+//   })
+//   .on('uncaughtException', err => {
+//     console.error(err, 'Uncaught Exception thrown');
+//     process.exit(1);
+//   });
 electron_1.ipcMain.on('selectedInstance', function (e, userLogged, app, company, instance, user, pass) {
     var fileName = '';
     switch (app) {
@@ -255,12 +265,38 @@ electron_1.ipcMain.on('killProcess', function (e, pid) {
     killProcess(pid);
 });
 electron_1.ipcMain.on('isRunning', function (e, app) {
-    isRunning(app, function (tasks, error) {
+    isRunning(app, function (tasks) {
         e.returnValue = {
             ok: true,
             tasks: tasks
         };
     });
+});
+electron_1.ipcMain.on('maximizeApp', function (e, pid) {
+    try {
+        var activeProcesses = processWindows.getProcesses(function (error, processes) {
+            if (error) {
+                e.returnValue = {
+                    ok: false,
+                    error: error
+                };
+            }
+            var appProcesses = processes.filter(function (p) { return p.pid === pid; });
+            if (appProcesses.length > 0) {
+                processWindows.focusWindow(appProcesses[0]);
+                e.returnValue = {
+                    ok: true,
+                    task: appProcesses
+                };
+            }
+        });
+    }
+    catch (error) {
+        e.returnValue = {
+            ok: false,
+            error: error
+        };
+    }
 });
 function createWindow() {
     win = new electron_1.BrowserWindow({ fullscreen: true, webPreferences: {
@@ -313,8 +349,8 @@ function isRunning(query, cb) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, tasklist.getProcessInfo(query, { verbose: true }).then(function (process) {
-                        cb(process, null);
+                case 0: return [4 /*yield*/, tasklist.getProcessInfo(query, { verbose: false }).then(function (process) {
+                        cb(process);
                     })];
                 case 1:
                     _a.sent();

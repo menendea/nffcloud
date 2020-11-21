@@ -1,3 +1,5 @@
+require ('hazardous'); //soluciona problemas con .asar.unpacked
+
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import {  autoUpdater } from 'electron-updater';
 import log from 'electron-log';
@@ -36,6 +38,15 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+// process
+//   .on('unhandledRejection', (reason, p) => {
+//     console.error(reason, 'Unhandled Rejection at Promise', p);
+//   })
+//   .on('uncaughtException', err => {
+//     console.error(err, 'Uncaught Exception thrown');
+//     process.exit(1);
+//   });
 
 ipcMain.on('selectedInstance', (e, userLogged, app, company, instance, user, pass) => {
 
@@ -253,15 +264,32 @@ ipcMain.on('isRunning', (e, app) => {
 
 ipcMain.on('maximizeApp', (e, pid) => {
 
-  let activeProcesses = processWindows.getProcesses(function(err, processes) {
+  try {
+      let activeProcesses = processWindows.getProcesses(function(error, processes) {
+
+        if(error){
+          e.returnValue = {
+            ok: false,
+            error
+          }
+        }
+
+        let appProcesses = processes.filter(p => p.pid === pid);
     
-    let appProcesses = processes.filter(p => p.pid === pid);
-
-    if(appProcesses.length > 0) {
-        processWindows.focusWindow(appProcesses[0]);
+        if(appProcesses.length > 0) {
+            processWindows.focusWindow(appProcesses[0]);
+            e.returnValue = {
+              ok: true,
+              task: appProcesses
+            }
+        }
+      });   
+  } catch (error) {
+    e.returnValue = {
+      ok: false,
+      error
     }
-
-  });
+  }
 
 });
 
