@@ -67,15 +67,7 @@ electron_1.app.on('activate', function () {
         createWindow();
     }
 });
-// process
-//   .on('unhandledRejection', (reason, p) => {
-//     console.error(reason, 'Unhandled Rejection at Promise', p);
-//   })
-//   .on('uncaughtException', err => {
-//     console.error(err, 'Uncaught Exception thrown');
-//     process.exit(1);
-//   });
-electron_1.ipcMain.on('selectedInstance', function (e, userLogged, app, company, instance, user, pass) {
+electron_1.ipcMain.on('selectedInstance', function (e, userLogged, app, company, instance, user, pass, isProd) {
     var fileName = '';
     switch (app) {
         case 'NFF':
@@ -85,7 +77,7 @@ electron_1.ipcMain.on('selectedInstance', function (e, userLogged, app, company,
             fileName = "Netactica.Net.Accounting.Desktop.NetAccounting.exe." + instance + ".xml";
             break;
     }
-    var downloadConfigs = new downloadconfigs_1.default(user, pass);
+    var downloadConfigs = new downloadconfigs_1.default(user, pass, isProd);
     try {
         downloadConfigs.downloadFile(userLogged, company, fileName, instance).then(function (data) {
             e.returnValue = {

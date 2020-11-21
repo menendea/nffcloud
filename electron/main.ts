@@ -39,16 +39,7 @@ app.on('activate', () => {
   }
 });
 
-// process
-//   .on('unhandledRejection', (reason, p) => {
-//     console.error(reason, 'Unhandled Rejection at Promise', p);
-//   })
-//   .on('uncaughtException', err => {
-//     console.error(err, 'Uncaught Exception thrown');
-//     process.exit(1);
-//   });
-
-ipcMain.on('selectedInstance', (e, userLogged, app, company, instance, user, pass) => {
+ipcMain.on('selectedInstance', (e, userLogged, app, company, instance, user, pass, isProd) => {
 
   let fileName: string = '';
   switch (app) {
@@ -60,7 +51,7 @@ ipcMain.on('selectedInstance', (e, userLogged, app, company, instance, user, pas
       break;
   }
 
-  let downloadConfigs = new DownloadConfigs(user, pass);
+  let downloadConfigs = new DownloadConfigs(user, pass, isProd);
 
   try {
     downloadConfigs.downloadFile(userLogged, company, fileName, instance).then(data => {

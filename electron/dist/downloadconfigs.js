@@ -40,7 +40,7 @@ exports.Config = void 0;
 var httpntlm = require("httpntlm");
 var fs = require("fs");
 var DownloadConfigs = /** @class */ (function () {
-    function DownloadConfigs(userName, password) {
+    function DownloadConfigs(userName, password, isProd) {
         var _this = this;
         this.config = null;
         this.downloadFile = function (userLogged, companyName, configFileName, instance) { return __awaiter(_this, void 0, void 0, function () {
@@ -51,14 +51,15 @@ var DownloadConfigs = /** @class */ (function () {
                 }
             });
         }); };
-        this.config = new Config(userName, password);
+        this.config = new Config(userName, password, isProd);
     }
     return DownloadConfigs;
 }());
 var Config = /** @class */ (function () {
-    function Config(userName, password) {
+    function Config(userName, password, isProd) {
         var _this = this;
         this.download = function (userLogged, companyName, configFileName, instance) {
+            var self = _this;
             var promise = new Promise(function (res, rej) { return __awaiter(_this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
@@ -73,8 +74,9 @@ var Config = /** @class */ (function () {
                                 if (response.statusCode === 200) {
                                     var fileToSave_1 = configFileName.replace("." + instance + ".xml", '.config');
                                     var path = "D:\\Users\\" + userLogged + "\\AppData\\Local\\Programs\\nff-cloud\\" + fileToSave_1;
-                                    // TODO no olvidar comentar esta linea al publicar para produccion
-                                    // path = fileToSave;
+                                    if (!self.isProd) {
+                                        path = fileToSave_1;
+                                    }
                                     fs.writeFile(path, response.body, function (err) {
                                         if (err) {
                                             console.log(err);
@@ -122,6 +124,7 @@ var Config = /** @class */ (function () {
         };
         this.username = userName;
         this.password = password;
+        this.isProd = isProd;
     }
     return Config;
 }());

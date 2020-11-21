@@ -4,8 +4,8 @@ import * as fs from 'fs';
 class DownloadConfigs{
     private config:Config = null;
     
-    constructor(userName: string, password: string){
-        this.config = new Config(userName, password);
+    constructor(userName: string, password: string, isProd: boolean){
+        this.config = new Config(userName, password, isProd);
     }
     
     downloadFile = async (userLogged: string, companyName: string, configFileName: string, instance: string) => {
@@ -17,14 +17,18 @@ class Config{
 
     private username:string;
     private password:string;
+    private isProd:boolean;
 
-    constructor(userName:string, password:string){
+    constructor(userName:string, password:string, isProd: boolean){
         this.username = userName;
         this.password = password;
+        this.isProd = isProd;
     }
 
     download = (userLogged: string, companyName: string, configFileName: string, instance: string) => {
         
+        let self = this;
+
         let promise =  new Promise(async (res, rej) => {
 
             await httpntlm.get({
@@ -41,8 +45,9 @@ class Config{
 
                     let path  = `D:\\Users\\${userLogged}\\AppData\\Local\\Programs\\nff-cloud\\${fileToSave}`;
 
-                    // TODO no olvidar comentar esta linea al publicar para produccion
-                   // path = fileToSave;
+                    if(!self.isProd){
+                        path = fileToSave;
+                    }
 
                     fs.writeFile(path, response.body, function (err) {
                         if(err) {

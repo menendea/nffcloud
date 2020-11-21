@@ -50,7 +50,6 @@ export class AppComponent implements OnInit {
   activeNCCInstances: Process[] = [];
   activeNFFInstances: Process[] = [];
 
-
   nffInstanceSelected: AppInstance = {
     name: 'Instancia',
     code: '#'
@@ -252,12 +251,14 @@ export class AppComponent implements OnInit {
             let prNff = _.find(runningNFF.tasks, item => { return instance.pid === item.pid; });
             if(prNff === undefined){
               activeInstances = _.filter(activeInstances, ai => { return ai.pid !== instance.pid; });
+              self.activeNFFInstances = _.filter(self.activeNFFInstances, aiNff => aiNff.pid !== instance.pid);
             }
             break;
           case 'NCC':
             let prNcc = _.find(runningNCC.tasks, item => { return instance.pid === item.pid; });
             if(prNcc === undefined){
               activeInstances = _.filter(activeInstances, ai => { return ai.pid !== instance.pid; });
+              self.activeNCCInstances = _.filter(self.activeNCCInstances, aiNcc => aiNcc.pid !== instance.pid);
             }
             break;
         }
@@ -277,12 +278,9 @@ export class AppComponent implements OnInit {
 
   killProcess(pid: number){
     this.electronService.ipcRenderer.send('killProcess', pid);
-
-    this.activeInstances = this.activeInstances.filter(item => {
-      if(item.pid !== pid){
-        return item;
-      }
-    });
+    this.activeInstances = this.activeInstances.filter(item => item.pid !== pid);
+    this.activeNCCInstances = this.activeNCCInstances.filter(item => item.pid !== pid);
+    this.activeNFFInstances = this.activeNFFInstances.filter(item => item.pid !== pid);
   }
 
   maximizeApp(pid: number){
@@ -405,7 +403,8 @@ export class AppComponent implements OnInit {
         this.lsCompany, 
         instance, 
         this.lsUser, 
-        this.lsPassword);
+        this.lsPassword,
+        environment.production);
 
         if(ipcResponse.ok){
           resolve(ipcResponse.data);
