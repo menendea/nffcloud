@@ -49,6 +49,7 @@ var processWindows = require("node-process-windows");
 var child_process_1 = require("child_process");
 var netuser_1 = require("./netuser");
 var downloadconfigs_1 = require("./downloadconfigs");
+var folderObserver_1 = require("./folderObserver");
 var win;
 delete process.env.ELECTRON_ENABLE_SECURITY_WARNINGS;
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -197,8 +198,18 @@ electron_1.ipcMain.on('openNetAccountingConfig', function (e) {
     }
 });
 electron_1.ipcMain.on('openWorkDocs', function (e, path) {
-    var command = child_process_1.execFileSync;
-    command(path);
+    var command = child_process_1.exec;
+    command("explorer " + path);
+});
+electron_1.ipcMain.on('observeFolder', function (e, user, folder) {
+    var observer = new folderObserver_1.default();
+    observer.on('file-updated', function (log) {
+        console.log(log);
+    });
+    observer.on('file-added', function (log) {
+        console.log(log);
+    });
+    observer.watch(user, folder);
 });
 electron_1.ipcMain.on('openNetoffice', function (e) { return __awaiter(void 0, void 0, void 0, function () {
     var executablePath;

@@ -62,6 +62,7 @@ export class AppComponent implements OnInit {
   lsCompany: string;
   lsUser: string;
   lsPassword: string;
+  lsFolderToObserve: string;
 
   hasError: boolean = false;
   errorCode: number;
@@ -108,10 +109,15 @@ export class AppComponent implements OnInit {
     this.lsCompany = localStorage.getItem('company');
     this.lsUser = localStorage.getItem('user');
     this.lsPassword = localStorage.getItem('password');
+    this.lsFolderToObserve = localStorage.getItem('folderToObserve');
 
     if(this.lsCompany !== null){ $('#company').val(this.lsCompany); }
     if(this.lsUser !== null){ $('#user').val(this.lsUser); }
     if(this.lsPassword !== null){ $('#password').val(this.lsPassword); } 
+    if(this.lsFolderToObserve !== null){ 
+      $('#folderToObserve').val(this.lsFolderToObserve); 
+      this.observeFolder();
+    } 
 
     if(this.ipcMainResponse.ok){
 
@@ -150,10 +156,6 @@ export class AppComponent implements OnInit {
         return value;
       });
 
-    }
-
-    if(environment.production){
-      this.openWorkDocs();
     }
 
     this.evalAppIsRunning();
@@ -195,13 +197,18 @@ export class AppComponent implements OnInit {
     
   }
 
-  saveConfigParams(company: string, user: string, password: string){
+  saveConfigParams(company: string, user: string, password: string, folderToObserve: string){
     localStorage.setItem('company', company);
     localStorage.setItem('user', user);
     localStorage.setItem('password', password);
+    localStorage.setItem('folderToObserve', folderToObserve)
     this.lsCompany = company;
     this.lsUser = user;
     this.lsPassword = password;
+    this.lsFolderToObserve = folderToObserve;
+
+    this.observeFolder();
+
     $('#settingsModal').modal('hide')
   }
 
@@ -334,14 +341,32 @@ export class AppComponent implements OnInit {
 
   openWorkDocs(){
 
-    let path = 'C:\\Program Files\\Amazon\\AmazonWorkDocsSetup.exe';
+    // let path = 'C:\\Program Files\\Amazon\\AmazonWorkDocsSetup.exe';
 
-    // para DEV
+    // // para DEV
+    // if(!environment.production){
+    //   path = 'C:\\Program Files\\Adobe\\Adobe Photoshop CC 2019\\Photoshop.exe';
+    // }
+
+    const path = this.lsFolderToObserve;
+
+    if(path !== undefined && path !== ''){
+      this.electronService.ipcRenderer.send('openWorkDocs', path);
+    }
+    
+  }
+  
+  observeFolder(){
+
     if(!environment.production){
-      path = 'C:\\Program Files\\Adobe\\Adobe Photoshop CC 2019\\Photoshop.exe';
+      this.userName = 'ccekci';
     }
 
-    this.electronService.ipcRenderer.send('openWorkDocs', path);
+    const path = this.lsFolderToObserve;
+
+    if(path !== undefined && path !== ''){
+      this.electronService.ipcRenderer.send('observeFolder', this.userName, path);
+    }
   }
 
   moveConfigFile(instance: string, fileName: String){

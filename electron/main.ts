@@ -9,12 +9,13 @@ import * as fs from 'fs';
 
 const taskkill = require('taskkill');
 const tasklist = require('win-tasklist');
-var processWindows = require("node-process-windows");
+const processWindows = require("node-process-windows");
 
 import { exec, execFileSync }  from 'child_process';
 
 import NetUser from './netuser';
 import DownloadConfigs, { Config } from './downloadconfigs';
+import FolderObserver from './folderObserver';
 
 let win: BrowserWindow
 
@@ -190,9 +191,24 @@ ipcMain.on('openNetAccountingConfig', e => {
 });
 
 ipcMain.on('openWorkDocs', (e, path) => {
-  const command = execFileSync;
+  const command = exec;
+  command(`explorer ${path}`);
+});
 
-  command(path);
+ipcMain.on('observeFolder', (e, user, folder) => {
+
+  let observer = new FolderObserver();
+
+  observer.on('file-updated', log => {
+    console.log(log);
+  });
+
+  observer.on('file-added', log => {
+    console.log(log);
+  });
+
+  observer.watch(user ,folder);
+
 });
 
 ipcMain.on('openNetoffice', async (e) => {
